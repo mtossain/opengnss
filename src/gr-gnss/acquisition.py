@@ -1,3 +1,21 @@
+#    Copyright 2007 Trond Danielsen <trond.danielsen@gmail.com>
+#
+#    This file is part of OpenGNSS.
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
+
 from gnuradio import gr,window,gr_max
 from local_code import local_code
 from numpy import *
@@ -6,7 +24,7 @@ class single_channel_correlator(gr.hier_block2):
     def __init__(self, fs, fd, svn):
         self.fft_size = int( 1e-3*fs)
         self.window = window.blackmanharris(self.fft_size)
-        
+
         # aliases:
         c = lambda i, o, ip=0, op=0: self.connect(i,ip,o,op)
         d = lambda n, f: self.define_component( n, f)
@@ -27,20 +45,20 @@ class single_channel_correlator(gr.hier_block2):
 
         # Get signal magnitude.
         d( "mag", gr.complex_to_mag(self.fft_size) )
-        
+
         # Integrate signal.
         # alpha=0.2 is chosen on an ad-hoc basis, 
         # but the signal is stable after 10 periods.
         d( "iir", gr.single_pole_iir_filter_ff( 0.2, self.fft_size))
-        
+
         c( "self", "mult" )
         c( "local_code", "mult", op=1 )
         c( "mult", "ifft")
         c( "ifft", "mag" )
         c( "mag", "iir" )
         c( "iir", "self")
-        
-        
+
+
 class acquisition(gr.hier_block2):
 
     # Doppler frequency search range.
@@ -88,7 +106,7 @@ class acquisition(gr.hier_block2):
         c( "fd_s2v", "fd_iir" )
         c( "fd_iir", "fd_argmax" )
         c( "fd_argmax", "self", op=1 )
-        
+
         # Connect the individual channels to the input and the output interleaver.
         for (fd, i) in zip( self.doppler_range, range(len(self.doppler_range))):
             d( "correlator_%d" % fd, single_channel_correlator(fs, fd, svn))
@@ -103,6 +121,6 @@ class acquisition(gr.hier_block2):
             # Connect correlators to Fd processing.
             c( "correlator_%d" % fd, "fd_max_%d" % fd )
             c( "fd_max_%d" % fd, "fd_interleave", op=i )
-            
 
 # vim: ts=4 sts=4 sw=4 sta et ai
+

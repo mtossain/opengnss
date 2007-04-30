@@ -1,4 +1,21 @@
-#!/usr/bin/env python
+#    Copyright 2007 Trond Danielsen <trond.danielsen@gmail.com>
+#
+#    This file is part of OpenGNSS.
+#
+#    This program is free software; you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation; either version 2 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program; if not, write to the Free Software
+#    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
+
 
 from numpy import *
 
@@ -28,25 +45,5 @@ class DFT:
         self.current_theta = self.initial_theta
 
 
-# Simple test.
-if __name__ == "__main__":
-    import pylab as p
-
-    fs = 10e3
-    f = 0.3e3
-    x = arange(1024)
-
-    mydft = DFT(fs)
-
-    k = array([ mydft.calc(x, f+i*400) for i in range(3)])
-
-    start = 924
-    stop = 1124
-
-    for i in range(2):
-        p.subplot(2,1,i+1)
-        p.plot(k.ravel()[start+i*len(x):stop+i*len(x)])
-
-    p.show()
 
 # vim: ai ts=4 sts=4 et sw=4
