@@ -4,7 +4,7 @@
 from gnuradio import gr
 from numpy import *
 from scipy.signal import resample
-from gps-python.ca_code import ca_code
+from gps import ca_code
 
 class ca_code(gr.hier_block2):
 
