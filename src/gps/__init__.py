@@ -17,7 +17,7 @@
 #    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 
 
-from acquisition import Acquisition
+#from acquisition import Acquisition
 from ca_code import ca_code
 
 # vim: ai ts=4 sts=4 et sw=4

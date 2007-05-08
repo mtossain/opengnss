@@ -22,15 +22,11 @@ from scipy import signal
 import ca_code
 import dft
 
-import pylab as p
-
 
 debug = True
 def p_debug( string ):
     if debug == True:
         print string
-
-
 
 
 class Acquisition:
