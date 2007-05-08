@@ -8,7 +8,7 @@ setup(name="opengnss",
         author_email="trond.danielsen@gmail.com",
         url="http://code.google.com/p/opengnss/",
         package_dir={'': 'src'},
-        packages=['gps', 'gr-gnss'])
+        packages=['gps', 'gr_gnss'])
 
 
 
