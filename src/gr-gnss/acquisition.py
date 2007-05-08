@@ -16,7 +16,7 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 
-from gnuradio import gr,window,gr_max
+from gnuradio import gr,window
 from local_code import local_code
 from numpy import *
 
@@ -89,38 +89,44 @@ class acquisition(gr.hier_block2):
         c( "self", "input_s2v" )
         c( "input_s2v", "input_fft" )
 
+        d( "argmax", gr.argmax_fi(self.fft_size) )
+        c( "argmax", "self")
+        c( "argmax", "self", ip=1, ou=1 )
+
         # C/A delay processing.
-        d( "ca_sum", gr.add_vff(self.fft_size))
-        d( "ca_iir", gr.single_pole_iir_filter_ff( 0.02, self.fft_size))
-        d( "ca_argmax", gr_max.argmax_fs(self.fft_size))
-        c( "ca_sum", "ca_iir" )
-        c( "ca_iir", "ca_argmax" )
-        c( "ca_argmax", "self", op=0 )
+        # d( "ca_sum", gr.add_vff(self.fft_size))
+        # d( "ca_iir", gr.single_pole_iir_filter_ff( 0.02, self.fft_size))
+        # d( "ca_argmax", gr_max.argmax_fs(self.fft_size))
+        # c( "ca_sum", "ca_iir" )
+        # c( "ca_iir", "ca_argmax" )
+        # c( "ca_argmax", "self", op=0 )
 
         # Fd processing.
-        d( "fd_interleave", gr.interleave(gr.sizeof_float))
-        d( "fd_s2v", gr.stream_to_vector(gr.sizeof_float, len(self.doppler_range)))
-        d( "fd_iir", gr.single_pole_iir_filter_ff( 0.02, len(self.doppler_range)))
-        d( "fd_argmax", gr_max.argmax_fs(len(self.doppler_range)))
-        c( "fd_interleave", "fd_s2v" )
-        c( "fd_s2v", "fd_iir" )
-        c( "fd_iir", "fd_argmax" )
-        c( "fd_argmax", "self", op=1 )
+        # d( "fd_interleave", gr.interleave(gr.sizeof_float))
+        # d( "fd_s2v", gr.stream_to_vector(gr.sizeof_float, len(self.doppler_range)))
+        # d( "fd_iir", gr.single_pole_iir_filter_ff( 0.02, len(self.doppler_range)))
+        # d( "fd_argmax", gr_max.argmax_fs(len(self.doppler_range)))
+        # c( "fd_interleave", "fd_s2v" )
+        # c( "fd_s2v", "fd_iir" )
+        # c( "fd_iir", "fd_argmax" )
+        # c( "fd_argmax", "self", op=1 )
 
         # Connect the individual channels to the input and the output interleaver.
         for (fd, i) in zip( self.doppler_range, range(len(self.doppler_range))):
             d( "correlator_%d" % fd, single_channel_correlator(fs, fd, svn))
-            d( "fd_max_%d" % fd, gr_max.max_ff(self.fft_size))
+            # d( "fd_max_%d" % fd, gr_max.max_ff(self.fft_size))
 
             # Connect input to correlators.
             c( "input_fft", "correlator_%d" % fd )
 
+            c( "correlator_%d" % fd, "argmax", op=i )
+
             # Connect to C/A processing.
-            c( "correlator_%d" % fd, "ca_sum", op=i )
+            #c( "correlator_%d" % fd, "ca_sum", op=i )
 
             # Connect correlators to Fd processing.
-            c( "correlator_%d" % fd, "fd_max_%d" % fd )
-            c( "fd_max_%d" % fd, "fd_interleave", op=i )
+            #c( "correlator_%d" % fd, "fd_max_%d" % fd )
+            #c( "fd_max_%d" % fd, "fd_interleave", op=i )
 
 # vim: ts=4 sts=4 sw=4 sta et ai
 
