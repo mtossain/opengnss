@@ -56,7 +56,7 @@ class Acquisition:
         self.dft = self.mydft.calc
 
 
-    def truncate(x, N):
+    def truncate(self, x, N):
         foo = len(x) % N
         if foo > 0:
             return x[:-foo]
@@ -68,7 +68,7 @@ class Acquisition:
         code = ca_code.ca_code(svn=self.svn, fs=self.fs, ca_shift=shift)
         f = lambda fd: array( [ e**(2j*pi*fd*n/self.fs) for n in range(len(code))] )
         lc = array( [code*f(fd) for fd in self.doppler_range ] )
-        return ( lc, (fft.fft(lc)))
+        return ( lc, fft.fft(lc))
 
 
     def calc(self, x, n=5):
@@ -84,7 +84,7 @@ class Acquisition:
         x = reshape ( self.truncate( x, self.N), (-1, self.N))[:n]
 
         # Coarse acquisition. 
-        # Hvorfor virker conf(fft.fft naar fft.ifft ikke funker??
+        # Hvorfor virker conj(fft.fft naar fft.ifft ikke funker??
         X = conj(fft.fft(x))
         r = sum( array([ abs(fft.ifft( self.LC*X_i)) for X_i in X ]), axis=0)
         (f_coarse, ca_delay) = self.argmax_2d(r)

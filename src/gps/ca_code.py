@@ -54,12 +54,14 @@ def ca_code(svn=1, fs=0, ca_shift=0):
     
     # Resample if fs is given.
     if fs:
-#         ca1 = array ( map( sign, resample( ca, 1e-3*fs)))
-        gr = 1.023e6
-        k = gr*arange(1e-3*fs)/fs
-        k = map( int, k)
-        ca = ca[k]
+        k = array(map( int, linspace(0, N-1, num=1e-3*fs)))
 
+        # Old index generator.
+        #gr = 1.023e6
+        #k = gr*arange(1e-3*fs)/fs
+        #k = array(map( int, k))
+
+        ca = ca[k]
     return shift(ca, ca_shift)
 
 

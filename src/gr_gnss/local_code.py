@@ -23,7 +23,6 @@ from gps import ca_code
 class local_code(gr.hier_block2):
     def __init__(self, svn, fs, fd):
 
-
         code = ca_code(svn=svn, fs=fs)
         fd = array( [ e**(2j*pi*fd*n/fs) for n in range(len(code))] )
         lc = conj(fft.fft(code * fd))

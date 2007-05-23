@@ -25,7 +25,7 @@ def dft(x, f):
     kernel = e**( -2j*pi*f*t )
     kernel = truncate( kernel, N )
     kernel = reshape( kernel, (-1, N))
-    
+
     return array( [ sum( x[n] * kernel[n] ) for n in range(20) ] )
 
 

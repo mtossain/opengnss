@@ -5,13 +5,19 @@ from scipy import signal
 import pylab as p
 from gps import *
 
+def truncate(self, x, N):
+    foo = len(x) % N
+    if foo > 0:
+        return x[:-foo]
+    else:
+        return x
 
 if __name__ == "__main__":
     if 1:
         fs = 4e6
-        x = fromfile('data/L1-4MHz-svn1-nav.dat', dtype=complex64)
+        x = fromfile('../data/L1-4MHz-svn1-nav.dat', dtype=complex64)
         # Drop the inital samples, they contain nasty spikes.
-        x = x[8000:]
+        x = x[4000:]
     elif 0:
         fs = 2e6
         x = fromfile('data/L1-2MHz-svn1.dat', dtype=complex64)

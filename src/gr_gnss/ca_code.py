@@ -17,9 +17,8 @@
 #    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 
 from gnuradio import gr
-from numpy import *
-from scipy.signal import resample
-from gps import ca_code
+# from gps import ca_code
+import gps
 
 class ca_code(gr.hier_block2):
 
@@ -32,9 +31,12 @@ class ca_code(gr.hier_block2):
             gr.io_signature( 0,0,0),
             gr.io_signature( 1,1,gr.sizeof_float))
 
-        self._svn = svn
-        self._code = self.generate_code(svn, fs)
+        #self._svn = svn
+        self._code = gps.ca_code(svn=svn, fs=fs)
 
-        self.define_component("code", gr.vector_source_f(self._code, True))
-        self.connect( "code", 0, "self", 0)
+        self.code = gr.vector_source_f(self._code, True)
+        self.connect( self.code, self)
+
+    def set_delay(self, delay):
+        self.code.set_offset(delay)
 
