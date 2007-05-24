@@ -53,15 +53,15 @@ class single_channel_correlator(gr.hier_block2):
         self.connect( self.mult, self.ifft, self.mag, self.iir, self)
 
         # Debug sink.
-#        self.file_sink = gr.file_sink(self.fft_size*gr.sizeof_float, "/home/trondd/opengnss_output/fd_%d.dat" % fd)
-#        self.connect( self.iir, self.file_sink)
+        self.file_sink = gr.file_sink(self.fft_size*gr.sizeof_float, "/home/trondd/opengnss_output/fd_%d.dat" % fd)
+        self.connect( self.iir, self.file_sink)
 
 class acquisition(gr.hier_block2):
 
     # Doppler frequency search range.
     doppler_search_step = 1e3
-    doppler_search_min = -10e3
-    doppler_search_max = 10e3
+    doppler_search_min = -20e3
+    doppler_search_max = 20e3
     doppler_range = arange(doppler_search_min, \
         doppler_search_max + doppler_search_step, \
         doppler_search_step)
@@ -117,11 +117,9 @@ class acquisition(gr.hier_block2):
         self.connect( (self.argmax,1), 
                 gr.short_to_float(),
                 # Scale signal
-#                gr.multiply_const_ff( int(self.doppler_search_step )),
-#                gr.add_const_ff( int(self.doppler_search_min )),
+                gr.multiply_const_ff( int(self.doppler_search_step )),
+                gr.add_const_ff( int(self.doppler_search_min )),
 #                gr.fir_filter_fff( 1, fd_filt_coeffs),
-#                gr.float_to_short(),
-#                gr.short_to_float(),
                 (self,1))
 
         # Connect the individual channels to the input and the output.
