@@ -24,8 +24,9 @@ class local_code(gr.hier_block2):
     def __init__(self, svn, fs, fd):
 
         code = ca_code(svn=svn, fs=fs)
-        fd = array( [ e**(2j*pi*fd*n/fs) for n in range(len(code))] )
-        lc = conj(fft.fft(code * fd))
+        n = arange(len(code))
+        fd = e**(2j*pi*fd*n/fs)
+        lc = fft.ifft(conj(code * fd))
 
         gr.hier_block2.__init__(self,
             "local_code",
@@ -37,4 +38,5 @@ class local_code(gr.hier_block2):
 
         self.connect( self.code, self.s2v, self)
 
+# vim: ai ts=4 sts=4 et sw=4
 

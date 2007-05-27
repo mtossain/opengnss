@@ -17,7 +17,6 @@
 #    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 
 from gnuradio import gr
-# from gps import ca_code
 import gps
 
 class ca_code(gr.hier_block2):

@@ -40,7 +40,7 @@ class single_channel_correlator(gr.hier_block2):
         self.ifft = gr.fft_vcc(self.fft_size, False, self.window)
 
         # Get signal magnitude.
-        self.mag = gr.complex_to_mag(self.fft_size)
+        self.mag = gr.complex_to_mag_squared(self.fft_size)
 
         # Integrate signal.
         # alpha=0.2 is chosen on an ad-hoc basis, 
@@ -60,8 +60,8 @@ class acquisition(gr.hier_block2):
 
     # Doppler frequency search range.
     doppler_search_step = 1e3
-    doppler_search_min = -20e3
-    doppler_search_max = 20e3
+    doppler_search_min = -10e3
+    doppler_search_max = 10e3
     doppler_range = arange(doppler_search_min, \
         doppler_search_max + doppler_search_step, \
         doppler_search_step)
@@ -90,29 +90,30 @@ class acquisition(gr.hier_block2):
 
         # Get correlation peak magnitude.
         self.max = gr.max_ff(self.fft_size)
-        rmax_filt_coeffs = gr.firdes_low_pass( 1,
-                1e3, # output rate, new value each ms.
-                5, # max frequency change is 1 hz pr sec.
-                50)
+#        rmax_filt_coeffs = gr.firdes_low_pass( 1,
+#                1e3, # output rate, new value each ms.
+#                5, # max frequency change is 1 hz pr sec.
+#                50)
+
         self.connect( self.max,
 #                gr.fir_filter_fff( 1, rmax_filt_coeffs),
 #                gr.multiply_const_ff( 1.0/self.fft_size),
                 (self, 2))
 
         # Connect C/A code estimate to output.
-        ca_filt_coeffs = gr.firdes_low_pass( 1,
-                1e3, # output rate, new value each ms.
-                100, # max frequency change is 1 hz pr sec.
-                50)
+#        ca_filt_coeffs = gr.firdes_low_pass( 1,
+#                1e3, # output rate, new value each ms.
+#                100, # max frequency change is 1 hz pr sec.
+#                50)
         self.connect( (self.argmax, 0),
                 gr.short_to_float(),
                 #gr.fir_filter_fff( 1, ca_filt_coeffs),
                 (self, 0))
 
-        fd_filt_coeffs = gr.firdes_low_pass( 1,
-                1e3, # output rate, new value each ms.
-                5, # max frequency change is 1 hz pr sec.
-                100)
+#        fd_filt_coeffs = gr.firdes_low_pass( 1,
+#                1e3, # output rate, new value each ms.
+#                5, # max frequency change is 1 hz pr sec.
+#                100)
 
         self.connect( (self.argmax,1), 
                 gr.short_to_float(),

@@ -25,7 +25,7 @@ def ca_code(svn=1, fs=0, ca_shift=0):
 
     # Shift an array n spaces.
     shift = lambda l, n: r_[ l[	n:], l[:n]]
-    
+
     # MLS feedback registers
     g1_gen = lambda reg: ((reg>>9 ^ reg>>2) & 0x01 ) | (reg<<1 & N)
     g2_gen = lambda reg: ((reg>>9 ^ reg>>8 ^ reg>>7 ^ reg>>5 ^ reg>>2 ^ reg>>1) & 0x01) | (reg<<1 & N)
@@ -48,19 +48,13 @@ def ca_code(svn=1, fs=0, ca_shift=0):
 
     # Create C/A
     ca = ((g1>>9) ^ ( shift(g2, -g2_chip_delay[svn-1])>>9)) & 0x01
-    
+
     # Convert to bi-phase psk
     ca = ca*2 -1
-    
+
     # Resample if fs is given.
     if fs:
         k = array(map( int, linspace(0, N-1, num=1e-3*fs)))
-
-        # Old index generator.
-        #gr = 1.023e6
-        #k = gr*arange(1e-3*fs)/fs
-        #k = array(map( int, k))
-
         ca = ca[k]
     return shift(ca, ca_shift)
 

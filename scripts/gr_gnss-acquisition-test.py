@@ -39,7 +39,7 @@ class usrp_source(gr.hier_block2):
 
 
 class simulated_source(gr.hier_block2):
-    def __init__(self, N, fs, fd, ca_shift ):
+    def __init__(self, N, fs, fd, ca_shift, snr=0 ):
         gr.hier_block2.__init__(self,
                 "simulated_source",
                 gr.io_signature(0,0,0),
@@ -50,15 +50,24 @@ class simulated_source(gr.hier_block2):
 
         n = arange(len(code))
         f = e**( 2j*pi*fd*n/fs )
-        x = code * f
+        x = (code * f)
+
+        # Add noise.
+        signal_power = sum( sqrt(abs(x)))/len(x)
+        noise_voltage = sqrt(signal_power/10**(snr/10.0))
 
         src = gr.vector_source_c(x)
-        self.connect(src, self)
+        noise = gr.noise_source_c(gr.GR_UNIFORM, noise_voltage)
+        add = gr.add_cc()
+        self.connect(src, (add,0))
+        self.connect(noise, (add,1))
+
+        self.connect(add, self)
 
 
 class file_source( gr.hier_block2 ):
     def __init__( self, filename, skip ):
-        gr.hier_block2( self,
+        gr.hier_block2.__init__( self,
                 "file_source",
                 gr.io_signature(0,0,0),
                 gr.io_signature( 1,1,gr.sizeof_gr_complex ))
@@ -79,7 +88,9 @@ class acquisition_test(gr.top_block):
 
         # Capture 10e6 samples.
 #        src = usrp_source( N=2000, fs=fs )
-        src = simulated_source( N=40, fs=fs, fd=3e3, ca_shift=200)
+#        src = simulated_source( N=40, fs=fs, fd=3e3, ca_shift=200, snr=-20)
+        src = file_source( filename="../data/L1_4MHz_svn1_nav.dat", skip=4000)
+
         acq = acquisition(fs=fs, svn=svn, alpha=alpha)
 
         self.ca_sink = gr.vector_sink_f()
