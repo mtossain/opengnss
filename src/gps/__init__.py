@@ -20,4 +20,10 @@
 from acquisition import Acquisition
 from ca_code import ca_code
 
+from ca_code import qa_ca_code
+
+# run qa code on import
+qa_ca_code()
+
+
 # vim: ai ts=4 sts=4 et sw=4

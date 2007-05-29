@@ -19,7 +19,7 @@
 from numpy import *
 from scipy.signal import resample
 
-def ca_code(svn=1, fs=0, ca_shift=0):
+def ca_code(svn=1, fs=0, ca_shift=0, bpsk=True):
     # Length of the CA code.
     N = 2**10-1
 
@@ -49,8 +49,9 @@ def ca_code(svn=1, fs=0, ca_shift=0):
     # Create C/A
     ca = ((g1>>9) ^ ( shift(g2, -g2_chip_delay[svn-1])>>9)) & 0x01
 
-    # Convert to bi-phase psk
-    ca = ca*2 -1
+    # Convert to bpsk
+    if bpsk == True:
+        ca = ca*2 -1
 
     # Resample if fs is given.
     if fs:
@@ -60,11 +61,19 @@ def ca_code(svn=1, fs=0, ca_shift=0):
 
 
 def qa_ca_code():
+    import sys
     bitlist_to_oct = lambda x: sum([x[len(x)-1-i] << i for i in range(len(x))])
 
-    ca_1 = 01440
+    ca = [ 01440, 01620, 01710, 01744, 01133, 01454 ]
 
-    assert alltrue( bitlist_to_oct(ca_code(1)[:10]) == ca_1)
+    for (ca_i,i) in zip(ca, range(1, len(ca))):
+        try:
+            assert alltrue( bitlist_to_oct(ca_code(i, bpsk=False)[:10]) == ca_i)
+        except AssertionError:
+            sys.exit("C/A code for SVN %d failed test!" % i)
+
+    print "All C/A code tests passed."
+
 
 
 # vim: ai ts=4 sts=4 et sw=4
