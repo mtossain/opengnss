@@ -64,7 +64,7 @@ def qa_ca_code():
     import sys
     bitlist_to_oct = lambda x: sum([x[len(x)-1-i] << i for i in range(len(x))])
 
-    ca = [ 01440, 01620, 01710, 01744, 01133, 01454 ]
+    ca = [ 01440, 01620, 01710, 01744, 01133, 01454, 01626, 01504, 01642, 01750, 01764 ]
 
     for (ca_i,i) in zip(ca, range(1, len(ca))):
         try:
