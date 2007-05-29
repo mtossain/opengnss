@@ -66,32 +66,37 @@ class simulated_source(gr.hier_block2):
 
 
 class file_source( gr.hier_block2 ):
-    def __init__( self, filename, skip ):
+    def __init__( self, filename, skip=0 ):
         gr.hier_block2.__init__( self,
                 "file_source",
                 gr.io_signature(0,0,0),
                 gr.io_signature( 1,1,gr.sizeof_gr_complex ))
 
         src =  gr.file_source( gr.sizeof_gr_complex, filename )
-        head =  gr.skiphead( gr.sizeof_gr_complex, skip )
-        self.connect( src, head, self )
+
+        if skip>0:
+            skip_head =  gr.skiphead( gr.sizeof_gr_complex, skip )
+            self.connect( src, skip_head, self )
+        else:
+            self.connect(src, self)
 
 
 class acquisition_test(gr.top_block):
-    def __init__(self):
+    def __init__(self, filename="", fs=4e6):
         gr.top_block.__init__(self, "acquisition_test")
 
         # Parameters.
-        fs = 4e6
         svn = 1
         alpha = 0.05
 
         # Capture 10e6 samples.
 #        src = usrp_source( N=2000, fs=fs )
-#        src = simulated_source( N=40, fs=fs, fd=3e3, ca_shift=200, snr=-20)
-        src = file_source( filename="../data/L1_4MHz_svn1_nav.dat", skip=4000)
+        if filename:
+            src = file_source( filename=filename )
+        else:
+            src = simulated_source( N=40, fs=fs, fd=3e3, ca_shift=200, snr=-11)
 
-        acq = acquisition(fs=fs, svn=svn, alpha=alpha)
+        acq = acquisition(fs=fs, svn=svn, alpha=alpha, fd_range=5)
 
         self.ca_sink = gr.vector_sink_f()
         self.fd_sink = gr.vector_sink_f()
@@ -104,7 +109,13 @@ class acquisition_test(gr.top_block):
 
 
 def main():
-    top_block = acquisition_test()
+    if len(sys.argv) > 1:
+        filename = sys.argv[1]
+        fs = 4e6
+    else:
+        filename = ''
+
+    top_block = acquisition_test(filename, fs)
     runtime = gr.runtime(top_block)
 
     try:
@@ -118,11 +129,13 @@ def main():
         p.plot( top_block.ca_sink.data())
         p.title("C/A code delay")
         p.xlabel("$t [ms]$")
+        p.ylim(0,4000)
 
         p.subplot(3,1,2)
         p.plot( top_block.fd_sink.data())
         p.title("Doppler frequency estimate.")
         p.xlabel("$t [ms]$")
+        p.ylim( -5e3, 5e3 )
 
         p.subplot(3,1,3)
         p.plot( top_block.rmax_sink.data())
@@ -130,7 +143,7 @@ def main():
         p.xlabel("$t [ms]$")
 
         p.show()
-        p.savefig("ca_fd_rmax.pdf")
+#        p.savefig("ca_fd_rmax.pdf")
     except KeyboardInterrupt:
         pass
 

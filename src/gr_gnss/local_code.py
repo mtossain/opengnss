@@ -25,18 +25,18 @@ class local_code(gr.hier_block2):
 
         code = ca_code(svn=svn, fs=fs)
         n = arange(len(code))
-        fd = e**(2j*pi*fd*n/fs)
-        lc = fft.ifft(conj(code * fd))
+        f = e**(2j*pi*fd*n/fs)
+        lc = conj(fft.fft(code * f))
 
         gr.hier_block2.__init__(self,
             "local_code",
             gr.io_signature(0,0,0),
             gr.io_signature(1,1, len(lc)*gr.sizeof_gr_complex))
 
-        self.code = gr.vector_source_c(lc, True)
-        self.s2v = gr.stream_to_vector(gr.sizeof_gr_complex, len(lc))
+        src = gr.vector_source_c(lc, True)
+        s2v = gr.stream_to_vector(gr.sizeof_gr_complex, len(lc))
 
-        self.connect( self.code, self.s2v, self)
+        self.connect( src, s2v, self)
 
 # vim: ai ts=4 sts=4 et sw=4
 

@@ -16,121 +16,84 @@
 #    along with this program; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 
-from gnuradio import gr,window
+from gnuradio import gr
 from local_code import local_code
-from numpy import *
+
 
 class single_channel_correlator(gr.hier_block2):
-    def __init__(self, fs, fd, svn, alpha):
-        self.fft_size = int( 1e-3*fs)
-        self.window = window.blackmanharris(self.fft_size)
+    def __init__(self, fs, fd, svn, alpha, ifft_window=[]):
+        fft_size = int( 1e-3*fs)
 
         gr.hier_block2.__init__(self,
             "single_channel_correlator",
-            gr.io_signature(1,1, gr.sizeof_gr_complex*self.fft_size),
-            gr.io_signature(1,1, gr.sizeof_float*self.fft_size))
+            gr.io_signature(1,1, gr.sizeof_gr_complex*fft_size),
+            gr.io_signature(1,1, gr.sizeof_float*fft_size))
 
-        # Local code.
-        self.local_code = local_code(svn=svn, fs=fs, fd=fd)
-
-        # Multiply local code with recv. signal.
-        self.mult = gr.multiply_vcc(self.fft_size)
-
-        # Invers transform result.
-        self.ifft = gr.fft_vcc(self.fft_size, False, self.window)
-
-        # Get signal magnitude.
-        self.mag = gr.complex_to_mag_squared(self.fft_size)
+        lc = local_code(svn=svn, fs=fs, fd=fd)
+        mult = gr.multiply_vcc(fft_size)
+        ifft = gr.fft_vcc(fft_size, False, ifft_window)
+        mag = gr.complex_to_mag_squared(fft_size)
 
         # Integrate signal.
-        # alpha=0.2 is chosen on an ad-hoc basis, 
-        # but the signal is stable after 10 periods.
-        self.iir = gr.single_pole_iir_filter_ff( alpha, self.fft_size)
+        iir = gr.single_pole_iir_filter_ff( alpha, fft_size)
 
-        self.connect( self, (self.mult, 0))
-        self.connect( self.local_code, (self.mult, 1))
+        self.connect( self, (mult, 0))
+        self.connect( lc,   (mult, 1))
+        self.connect( mult, ifft, mag, iir, self)
 
-        self.connect( self.mult, self.ifft, self.mag, self.iir, self)
+    def connect_debug_sink(self, src, fft_size, output_path, fd):
+        filename = os.path.join(output_path, "filt_fd_%d.dat" % fd)
+        file_sink = gr.file_sink(fft_size*gr.sizeof_float, filename)
+        self.connect( src, file_sink )
 
-        # Debug sink.
-        self.file_sink = gr.file_sink(self.fft_size*gr.sizeof_float, "/home/trondd/opengnss_output/fd_%d.dat" % fd)
-        self.connect( self.iir, self.file_sink)
 
 class acquisition(gr.hier_block2):
+    """Coarse acquisition.
 
-    # Doppler frequency search range.
-    doppler_search_step = 1e3
-    doppler_search_min = -10e3
-    doppler_search_max = 10e3
-    doppler_range = arange(doppler_search_min, \
-        doppler_search_max + doppler_search_step, \
-        doppler_search_step)
+    Output 0 is the C/A code delay.
+    Output 1 is the Doppler frequency estimate in Hz.
+    Output 2 is the correlation peak value."""
 
-    def __init__(self, fs, svn, alpha):
-
-        self.fft_size = int( 1e-3*fs)
-        self.window = window.blackmanharris(self.fft_size)
+    def __init__(self, fs, svn, alpha, fd_range=5, fft_window=[]):
+        fft_size = int( 1e-3*fs)
+        doppler_range = self.get_doppler_range(fd_range)
 
         gr.hier_block2.__init__(self,
             "acquisition",
             gr.io_signature(1,1, gr.sizeof_gr_complex),
             gr.io_signature(3,3, gr.sizeof_float))
 
-        # Input signal; get Fourier transform of signal.
-        agc = gr.agc_cc(1e3/fs,            # Time constant
-                        1.0,               # Reference power
-                        1.0,               # Initial gain
-                        1.5)               # Maximum gain
+        agc = gr.agc_cc( 1.0/fs, 1.0, 1.0, 1.0)
+        s2v = gr.stream_to_vector(gr.sizeof_gr_complex, fft_size)
+        src = gr.fft_vcc(fft_size, True,fft_window)
+        argmax = gr.argmax_fs(fft_size)
+        max = gr.max_ff(fft_size)
 
-        s2v = gr.stream_to_vector(gr.sizeof_gr_complex, self.fft_size)
-        self.src = gr.fft_vcc(self.fft_size, True, self.window)
-        self.connect( self, agc, s2v, self.src)
-
-        self.argmax = gr.argmax_fs(self.fft_size)
-
-        # Get correlation peak magnitude.
-        self.max = gr.max_ff(self.fft_size)
-#        rmax_filt_coeffs = gr.firdes_low_pass( 1,
-#                1e3, # output rate, new value each ms.
-#                5, # max frequency change is 1 hz pr sec.
-#                50)
-
-        self.connect( self.max,
-#                gr.fir_filter_fff( 1, rmax_filt_coeffs),
-#                gr.multiply_const_ff( 1.0/self.fft_size),
-                (self, 2))
-
-        # Connect C/A code estimate to output.
-#        ca_filt_coeffs = gr.firdes_low_pass( 1,
-#                1e3, # output rate, new value each ms.
-#                100, # max frequency change is 1 hz pr sec.
-#                50)
-        self.connect( (self.argmax, 0),
+        self.connect( self, s2v, src)
+        self.connect( (argmax, 0),
                 gr.short_to_float(),
-                #gr.fir_filter_fff( 1, ca_filt_coeffs),
                 (self, 0))
-
-#        fd_filt_coeffs = gr.firdes_low_pass( 1,
-#                1e3, # output rate, new value each ms.
-#                5, # max frequency change is 1 hz pr sec.
-#                100)
-
-        self.connect( (self.argmax,1), 
+        self.connect( (argmax,1),
                 gr.short_to_float(),
-                # Scale signal
-                gr.multiply_const_ff( int(self.doppler_search_step )),
-                gr.add_const_ff( int(self.doppler_search_min )),
-#                gr.fir_filter_fff( 1, fd_filt_coeffs),
+                gr.add_const_ff(-fd_range),
+                gr.multiply_const_ff(1e3),
                 (self,1))
+        self.connect( max, (self, 2))
 
         # Connect the individual channels to the input and the output.
-        self.correlators = [ single_channel_correlator( fs, fd, svn, alpha) for fd in self.doppler_range ]
+        correlators = [ single_channel_correlator( fs, fd, svn, alpha, fft_window) for fd in doppler_range ]
 
-        for (correlator, i) in zip( self.correlators, range(len(self.correlators))):
-            self.connect( self.src, correlator )
-            self.connect( correlator, (self.argmax, i) )
-            self.connect( correlator, (self.max, i) )
+        for (correlator, i) in zip( correlators, range(len(correlators))):
+            self.connect( src, correlator )
+            self.connect( correlator, (argmax, i) )
+            self.connect( correlator, (max, i) )
 
+
+    def get_doppler_range(self, fd_range):
+        """Range is given in kHz. 
+        Step length is currently hard coded to 1kHz."""
+        step = 1e3
+        return range( int(-fd_range*1e3), int(fd_range*1e3), step)
 
 # vim: ts=4 sts=4 sw=4 sta et ai
 
