@@ -64,16 +64,13 @@ def qa_ca_code():
     import sys
     bitlist_to_oct = lambda x: sum([x[len(x)-1-i] << i for i in range(len(x))])
 
-    ca = [ 01440, 01620, 01710, 01744, 01133, 01454, 01626, 01504, 01642, 01750, 01764 ]
+    ca = [ 01440, 01620, 01710, 01744, 01133, 01455, 01131, 01454, 01626, 01504, 01642 ]
 
     for (ca_i,i) in zip(ca, range(1, len(ca))):
         try:
             assert alltrue( bitlist_to_oct(ca_code(i, bpsk=False)[:10]) == ca_i)
         except AssertionError:
             sys.exit("C/A code for SVN %d failed test!" % i)
-
-    print "All C/A code tests passed."
-
 
 
 # vim: ai ts=4 sts=4 et sw=4

@@ -17,42 +17,13 @@
 #    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 
 from gnuradio import gr
-from local_code import local_code
-
-
-class single_channel_correlator(gr.hier_block2):
-    def __init__(self, fs, fd, svn, alpha, ifft_window=[]):
-        fft_size = int( 1e-3*fs)
-
-        gr.hier_block2.__init__(self,
-            "single_channel_correlator",
-            gr.io_signature(1,1, gr.sizeof_gr_complex*fft_size),
-            gr.io_signature(1,1, gr.sizeof_float*fft_size))
-
-        lc = local_code(svn=svn, fs=fs, fd=fd)
-        mult = gr.multiply_vcc(fft_size)
-        ifft = gr.fft_vcc(fft_size, False, ifft_window)
-        mag = gr.complex_to_mag_squared(fft_size)
-
-        # Integrate signal.
-        iir = gr.single_pole_iir_filter_ff( alpha, fft_size)
-
-        self.connect( self, (mult, 0))
-        self.connect( lc,   (mult, 1))
-        self.connect( mult, ifft, mag, iir, self)
-
-    def connect_debug_sink(self, src, fft_size, output_path, fd):
-        filename = os.path.join(output_path, "filt_fd_%d.dat" % fd)
-        file_sink = gr.file_sink(fft_size*gr.sizeof_float, filename)
-        self.connect( src, file_sink )
+from signal_channel_correlator import *
 
 
 class acquisition(gr.hier_block2):
-    """Coarse acquisition.
-
-    Output 0 is the C/A code delay.
-    Output 1 is the Doppler frequency estimate in Hz.
-    Output 2 is the correlation peak value."""
+    # Output 0 is the C/A code delay.
+    # Output 1 is the Doppler frequency estimate in Hz.
+    # Output 2 is the correlation peak value.
 
     def __init__(self, fs, svn, alpha, fd_range=5, fft_window=[]):
         fft_size = int( 1e-3*fs)
