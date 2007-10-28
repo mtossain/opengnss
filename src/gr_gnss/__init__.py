@@ -17,5 +17,6 @@
 #    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 
 from acquisition import *
-from ca_code import ca_code
+# from ca_code import ca_code
+# from single_channel_correlator import *
 

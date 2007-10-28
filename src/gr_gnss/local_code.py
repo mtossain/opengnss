@@ -23,6 +23,8 @@ from gps import ca_code
 class local_code(gr.hier_block2):
     def __init__(self, svn, fs, fd):
 
+        # Compute local code in advance to reduce the number of runtime
+        # calculations required.
         code = ca_code(svn=svn, fs=fs)
         n = arange(len(code))
         f = e**(2j*pi*fd*n/fs)

@@ -17,7 +17,7 @@
 #    Foundation, Inc., 51 Franklin Street, Boston, MA  02110-1301  USA
 
 from gnuradio import gr
-from signal_channel_correlator import *
+from single_channel_correlator import *
 
 
 class acquisition(gr.hier_block2):
@@ -25,22 +25,23 @@ class acquisition(gr.hier_block2):
     # Output 1 is the Doppler frequency estimate in Hz.
     # Output 2 is the correlation peak value.
 
-    def __init__(self, fs, svn, alpha, fd_range=5, fft_window=[]):
-        fft_size = int( 1e-3*fs)
-        doppler_range = self.get_doppler_range(fd_range)
-
+    def __init__(self, fs, svn, alpha, fd_range, dump_bins=False):
         gr.hier_block2.__init__(self,
             "acquisition",
             gr.io_signature(1,1, gr.sizeof_gr_complex),
             gr.io_signature(3,3, gr.sizeof_float))
 
+        fft_size = int( 1e-3*fs)
+        doppler_range = self.get_doppler_range(fd_range)
+
         agc = gr.agc_cc( 1.0/fs, 1.0, 1.0, 1.0)
         s2v = gr.stream_to_vector(gr.sizeof_gr_complex, fft_size)
-        src = gr.fft_vcc(fft_size, True,fft_window)
+        fft = gr.fft_vcc(fft_size, True, [])
+
         argmax = gr.argmax_fs(fft_size)
         max = gr.max_ff(fft_size)
 
-        self.connect( self, s2v, src)
+        self.connect( self, s2v, fft)
         self.connect( (argmax, 0),
                 gr.short_to_float(),
                 (self, 0))
@@ -52,19 +53,24 @@ class acquisition(gr.hier_block2):
         self.connect( max, (self, 2))
 
         # Connect the individual channels to the input and the output.
-        correlators = [ single_channel_correlator( fs, fd, svn, alpha, fft_window) for fd in doppler_range ]
+        self.correlators = [ single_channel_correlator( fs, fd, svn, alpha, dump_bins) for fd in doppler_range ]
 
-        for (correlator, i) in zip( correlators, range(len(correlators))):
-            self.connect( src, correlator )
+        for (correlator, i) in zip( self.correlators, range(len(self.correlators))):
+            self.connect( fft, correlator )
             self.connect( correlator, (argmax, i) )
             self.connect( correlator, (max, i) )
+
+
+    def set_alpha(self, alpha):
+        for correlator in self.correlators:
+            correlator.set_alpha(alpha)
 
 
     def get_doppler_range(self, fd_range):
         """Range is given in kHz. 
         Step length is currently hard coded to 1kHz."""
         step = 1e3
-        return range( int(-fd_range*1e3), int(fd_range*1e3), step)
+        return range( int(-fd_range*1e3), int((fd_range+1)*1e3), int(step))
 
 # vim: ts=4 sts=4 sw=4 sta et ai
 
